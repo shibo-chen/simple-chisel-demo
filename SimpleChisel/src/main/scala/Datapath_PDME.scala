@@ -32,7 +32,6 @@ class DatapathInterface extends Interface{
 
 class Datapath extends Module with DatapathInterface{
 
-
     val pipelinedDecoupledNegator = Stage(new PipelinedDecoupledNegator)
     val simulatedAESDecryptEngin  = Stage(new SimulatedAESDecryptEngin)
     val simulatedAESEncryptEngin  = Stage(new SimulatedAESEncryptEngin)	
@@ -68,7 +67,7 @@ class Datapath extends Module with DatapathInterface{
 		out.proc2mem_address := address_to_store
     }
 	.otherwise{
-		out.proc2mem_address := 'b0
+		out.proc2mem_address := 0
     }
 
 
@@ -95,9 +94,9 @@ class Datapath extends Module with DatapathInterface{
 					n_last_ld_st := true.B
                     store_buffer.out.ctrl.ready := false.B
                 }
-				.elsewise{ // issue next request
+				.otherwise{ // issue next request
 					n_mem_counter := 1.U
-					input_valid := true.B
+					input_valid := false.B
 					proc2mem_cmd := BUS_LOAD
 					n_unresolved_req := true.B
 					n_last_ld_st := true.B
@@ -184,5 +183,6 @@ class Datapath extends Module with DatapathInterface{
         valid_input_to_negator := Vec.fill(p(WIDTH_IN_NUM_OF_FULL_INTEGER), false.B)
     }
 
-    Packet(valid_input_to_negator, simulatedAESDecryptEngin) >>> pipelinedDecoupledNegator >>> Packet(valid_output_from_negator, simulatedAESEncryptEngin)
+    Packet(valid_input_to_negator, simulatedAESDecryptEngin) >>> 
+    pipelinedDecoupledNegator >>> Packet(valid_output_from_negator, simulatedAESEncryptEngin)
 }
