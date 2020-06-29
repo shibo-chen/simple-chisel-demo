@@ -13,7 +13,6 @@ Buffer      Cycle 0         Cycle 1                 Cycle 2
 */
 `include "../util/FIFOBuffer.sv"
 `timescale 1ns/100ps
-`define SD #1
 
 module PipelinedDecoupledNegator
 #(parameter WIDTH_IN_NUM_OF_FULL_INTEGER = 1,
@@ -22,12 +21,13 @@ parameter SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH = 1)
 (
     input clock, // System clock
     input reset, // System reset
-    input logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1: 0] input_valid, // Whether the input is valid
+    input logic input_valid, // Whether the input is valid
     output logic input_ready,
     input logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1:0][INTEGER_WIDTH - 1: 0] input_data, // The input data
-    output logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1: 0] output_valid, // Wether the output is valid
+    output logic output_valid, // Wether the output is valid
     input logic output_ready,
     output logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1:0][INTEGER_WIDTH-1: 0] output_data// The output data
+
 );
 
     logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1:0][INTEGER_WIDTH-1: 0] input_buffer;
@@ -36,13 +36,16 @@ parameter SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH = 1)
     logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1:0][INTEGER_WIDTH-1: 0] negated_data;
     logic [WIDTH_IN_NUM_OF_FULL_INTEGER - 1:0][INTEGER_WIDTH-1: 0] n_negated_data;
 
-    logic [1 : 0][WIDTH_IN_NUM_OF_FULL_INTEGER-1: 0] valid;
-    logic [1 : 0][WIDTH_IN_NUM_OF_FULL_INTEGER-1: 0] n_valid;
+    logic [1 : 0] valid;
+    logic [1 : 0] n_valid;
 
-    logic [WIDTH_IN_NUM_OF_FULL_INTEGER-1: 0] validity_queue_output;
+    logic  validity_queue_output;
+	/* verilator lint_off UNUSED */
+    logic data_queue_empty, validity_queue_full;
+	/* verilator lint_on UNUSED */
 
-    logic queue_read, queue_write, queue_enable, data_queue_full, data_queue_empty,  validity_queue_full, validity_queue_empty;
-
+    logic queue_read, queue_write, queue_enable, data_queue_full, validity_queue_empty;
+    assign queue_enable = 1;
     /**
     We need to first create two fifo queues, one for data and one for validity
     **/
@@ -57,7 +60,7 @@ parameter SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH = 1)
     data_queue_empty, 
     data_queue_full); 
 
-    FIFOBuffer #(.WIDTH_IN_NUM_OF_FULL_DATA(WIDTH_IN_NUM_OF_FULL_INTEGER),
+    FIFOBuffer #(.WIDTH_IN_NUM_OF_FULL_DATA(1),
     .DATA_WIDTH(1),
     .SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH(SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH ))
     fifobuffer_for_validity( clock, reset, input_valid, 
@@ -69,7 +72,7 @@ parameter SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH = 1)
     validity_queue_full); 
 
     /****************************/
-    assign queue_read = (!output_ready) && (!validity_queue_empty); // When the downstream is ready and data_queue is not empty, we can pop one out
+    assign queue_read = ((output_ready) & (!validity_queue_empty)); // When the downstream is ready and data_queue is not empty, we can pop one out
     assign queue_write = (input_valid != 'b0); //If the upstream input is valid, we can push one
 
 
@@ -81,18 +84,18 @@ parameter SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH = 1)
     assign n_input_buffer = output_ready? data_queue_output : input_buffer;
 
     // Assign output
-    assign ready = valid[WIDTH_IN_NUM_OF_FULL_INTEGER*2-1: WIDTH_IN_NUM_OF_FULL_INTEGER];
 
-    always_ff(@posedge clock) begin 
+    always_ff@(posedge clock) begin 
         if(reset) begin
-            input_buffer <= `SD 'b0;
-            negated_data <= `SD 'b0;
-            valid <= `SD 'b0;
+            input_buffer <=  'b0;
+            negated_data <=  'b0;
+            valid <=  'b0;
         end
         else begin
-            input_buffer <= `SD n_input_buffer; // store the input into buffer for 1 cycle
-            negated_data <= `SD n_negated_data; // Store the unsigned int that has been negated
-            valid <= `SD n_valid;
+            input_buffer <=  n_input_buffer; // store the input into buffer for 1 cycle
+            negated_data <=  n_negated_data; // Store the unsigned int that has been negated
+            valid[1] <=  n_valid[1];
+            valid[0] <=  n_valid[0];
         end
     end
 

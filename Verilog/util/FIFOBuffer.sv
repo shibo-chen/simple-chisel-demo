@@ -8,7 +8,6 @@
 /////////////////////////////////////////////
 
 `timescale 1ns/100ps
-`define SD #1
 
 module FIFOBuffer
 #(parameter WIDTH_IN_NUM_OF_FULL_DATA = 1,
@@ -23,44 +22,65 @@ parameter SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH = 1)
     input logic enable, 
     output logic[WIDTH_IN_NUM_OF_FULL_DATA*DATA_WIDTH-1: 0] data_out, 
     output logic empty, 
-    output logic full); 
+    output logic full
+); 
 
 logic [$clog2(SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH):0]  Count; 
 logic [SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH : 0][WIDTH_IN_NUM_OF_FULL_DATA*DATA_WIDTH-1:0] FIFO; 
 logic [$clog2(SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH):0]  readCounter, 
            writeCounter; 
 
-assign empty = (Count==0)? 1'b1:1'b0; 
-assign full = (Count==DATA_WIDTH)? 1'b1:1'b0; 
+logic [$clog2(SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH):0]  n_readCounter, 
+           n_writeCounter; 
 
-always_ff(@posedge clock) begin 
+assign empty = (Count==0)? 1'b1:1'b0; 
+
+assign full = (Count==SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH)? 1'b1:1'b0; 
+assign data_out = FIFO[readCounter]; 
+
+always_comb begin
+    if(read ==1'b1 && Count!=0) begin
+        n_readCounter = (readCounter == SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH)?0:readCounter+1;
+    end
+    else begin
+        n_readCounter = readCounter;
+    end
+
+    if(write==1'b1 && Count<SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH) begin
+        n_writeCounter = (writeCounter == SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH)? 0: writeCounter+1; 
+    end
+    else begin
+        n_writeCounter = writeCounter; 
+    end
+
+end
+
+always_ff@(posedge clock) begin 
  if (enable==0); 
  else begin 
   if (reset) begin 
-   readCounter = 0; 
-   writeCounter = 0; 
+   readCounter <= 0; 
+   writeCounter <= 0; 
+   FIFO <= 0;
   end 
-  else if (read ==1'b1 && Count!=0) begin 
-   dataOut  = FIFO[readCounter]; 
-   readCounter = readCounter+1; 
-  end 
-  else if (write==1'b1 && Count<DATA_WIDTH) begin
-   FIFO[writeCounter]  = data_in; 
-   writeCounter  = writeCounter+1; 
-  end 
-  else; 
+  else  begin 
+      readCounter <= n_readCounter;
+      writeCounter <= n_writeCounter;
+      if (write==1'b1 && Count<SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH)
+        FIFO[writeCounter]  <= data_in; 
+  end
  end 
- if (writeCounter == SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH) 
-    writeCounter=0; 
- else if (readCounter == SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH) 
-  readCounter=0; 
- else;
- if (readCounter > writeCounter) begin 
-  Count=readCounter-writeCounter; 
+
+ if (n_readCounter > n_writeCounter) begin 
+     if(n_writeCounter == 0 && writeCounter == SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH)
+        Count<=SIZE_OF_BUFFER_IN_NUM_OF_INPUT_WIDTH - n_readCounter; 
+     else 
+        Count<=n_readCounter-n_writeCounter; 
  end 
- else if (writeCounter > readCounter) 
-  Count=writeCounter-readCounter; 
- else;
+ else if (n_writeCounter > n_readCounter) 
+  Count<=n_writeCounter-n_readCounter; 
+ else
+    Count <= 0;
 end 
 
 endmodule

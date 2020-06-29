@@ -12,7 +12,6 @@
 // https://github.com/secworks/aes/blob/master/src/rtl/aes_encipher_block.v 
 
 `timescale 1ns/100ps
-`define SD #1
 `define BLOCK_WIDTH 128
 module SimulatedAESDecryptEngin#(
     parameter NUM_CYCLE = 4
@@ -27,28 +26,35 @@ module SimulatedAESDecryptEngin#(
         output logic [`BLOCK_WIDTH -1 : 0] new_block
         );
 
-    logic [`BLOCK_WIDTH*NUM_CYCLE-1: 0] buffer;
+    logic [NUM_CYCLE-1: 0][`BLOCK_WIDTH - 1: 0] buffer;
     logic [NUM_CYCLE-1: 0] valid;
 
-    logic [`BLOCK_WIDTH*NUM_CYCLE-1: 0] n_buffer;
+    logic [NUM_CYCLE-1: 0][`BLOCK_WIDTH - 1 : 0] n_buffer;
     logic [NUM_CYCLE-1: 0] n_valid;
 
     // Determine what the value in next cycle would be 
-    assign n_buffer = {buffer[`BLOCK_WIDTH*NUM_CYCLE-1: `BLOCK_WIDTH], block}; // Shift it regardless of whether next signal is hi
-    assign n_valid = {valid[NUM_CYCLE-1: 1], next};
+    genvar i;
+     generate
+        for (i=1; i < NUM_CYCLE; i++) begin
+            assign n_buffer[i] = buffer[i-1]; 
+            assign n_valid[i] = valid[i-1];
+        end
+    endgenerate
+    assign n_buffer[0] = block;
+    assign n_valid[0] = next;
 
     // Assign output
     assign ready = valid[NUM_CYCLE-1];
-    assign new_block = buffer[`BLOCK_WIDTH*NUM_CYCLE-1: `BLOCK_WIDTH*(NUM_CYCLE-1)];
+    assign new_block = buffer[NUM_CYCLE-1];
 
-    always_ff(@posedge clock) begin 
+    always_ff @(posedge clock) begin 
         if(reset) begin
-            buffer <= `SD 'b0;
-            valid <= `SD 'b0;
+            buffer <=  'b0;
+            valid <=  'b0;
         end
         else begin
-            buffer <= `SD n_buffer; 
-            valid <= `SD n_valid;
+            buffer <=  n_buffer; 
+            valid <=  n_valid;
         end
     end
 

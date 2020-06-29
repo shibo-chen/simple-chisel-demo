@@ -14,3 +14,4 @@ The memory bandwidth can be 64,128,256-bit and takes multiple cycles
 The negator can be a single cycle negator, or to be a 4-cycle pipelined negator, or to have/ do not have buffer
 
 
+Export VERILATOR_INCLUDE={{{Verilator_install_path}/share/verilator/inlcude}
