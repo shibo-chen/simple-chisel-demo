@@ -18,8 +18,10 @@ class DatapathInterface extends Bundle{
 
 class Datapath_PDMP extends Module{
     val io = IO(new DatapathInterface)
+    
     val output_ready = Wire(Bool())
 	val pipelinedDecoupledNegator = Module(new PipelinedDecoupledNegator(1, 64) )
+
 	io.input_data <> pipelinedDecoupledNegator.io.input_data
     io.output_data <> pipelinedDecoupledNegator.io.output_data
     pipelinedDecoupledNegator.io.output_data.ready := true.B

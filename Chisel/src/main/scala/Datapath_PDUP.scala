@@ -16,7 +16,7 @@ class DatapathInterface extends Bundle{
     val output_data = Valid(UInt(64.W)
 }
 
-class Datapath_PTUP extends Module{
+class Datapath_PDUP extends Module{
     val io = IO(new DatapathInterface)
 
     val n_input_counter = Wire(UInt(1.W))
@@ -46,6 +46,7 @@ class Datapath_PTUP extends Module{
 
 	val pipelinedDecoupledNegator = Module(new PipelinedDecoupledNegator(1, 32))
     val output_ready = Wire(Bool)
+
 	pipelinedDecoupledNegator.io.input_data.valid := valid_input_to_negator
     pipelinedDecoupledNegator.io.input_data.bits := input_to_negator
     output_from_negator := pipelinedDecoupledNegator.io.output_data.bits

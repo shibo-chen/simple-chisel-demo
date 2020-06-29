@@ -20,7 +20,7 @@ class DatapathInterface extends Bundle{
     }
 }
 
-class Datapath_PTMP extends Module and DatapathInterface{	
+class Datapath_PDMP extends Module and DatapathInterface{	
 
 	val pipelinedDeoupledNegator = Module(new PipelinedDeoupledNegator(1, 64) )
 

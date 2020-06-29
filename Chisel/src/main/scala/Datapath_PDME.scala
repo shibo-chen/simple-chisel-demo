@@ -17,7 +17,7 @@ class DatapathInterface extends Bundle{
     val output_data = Valid(UInt(64.W)
 }
 
-class Datapath_PTME extends Module{
+class Datapath_PDME extends Module{
  	val io = IO(new DatapathInterface)
 
     val n_next_to_encrypt = Wire(UInt(1.W))
@@ -121,6 +121,7 @@ class Datapath_PTME extends Module{
 	val pipelinedTightlyCoupledNegator = Module(new PipelinedTightlyCoupledNegator(1, 64) )
 
     val output_ready = Wire(Bool)
+
 	pipelinedTightlyCoupledNegator.io.input_data.valid := valid_input_to_negator
     pipelinedTightlyCoupledNegator.io.input_data.bits := input_to_negator
     output_from_negator := pipelinedTightlyCoupledNegator.io.output_data.bits

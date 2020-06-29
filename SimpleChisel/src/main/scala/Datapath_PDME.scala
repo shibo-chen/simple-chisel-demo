@@ -21,7 +21,7 @@ class DatapathInterface extends Bundle{
     }
 }
 
-class Datapath_PTME extends Module and DatapathInterface{	
+class Datapath_PDME extends Module and DatapathInterface{	
     val simulatedAESDecryptEngin  = Module(new SimulatedAESDecryptEngin)
     val simulatedAESEncryptEngin  = Module(new SimulatedAESEncryptEngin)	
 	val pipelinedDeoupledNegator = Module(new PipelinedDeoupledNegator(1, 64) )
