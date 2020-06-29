@@ -1,8 +1,8 @@
-/* Version 1.2
-Negator: PipelinedDecoupledNegator
+/* Version 1.2 
+Negator: PipelinedTightlyCoupledNegator
 Negator Bandwidth: 64
 Memory Bandwidth: 64
-Interface: DECOUPLED
+Interface: TIGHTLY_COUPLED
 Encryption: YES
 */
 
@@ -18,7 +18,7 @@ class DatapathInterface extends Bundle{
 }
 
 class Datapath_PTME extends Module{
- 	val io = IO(new DatapathInterface)
+    val io = IO(new DatapathInterface)
 
     val n_next_to_encrypt = Wire(UInt(1.W))
 	val next_to_decrypt = RegNext(n_next_to_decrypt)
@@ -119,14 +119,10 @@ class Datapath_PTME extends Module{
     val valid_output_from_negator = Wire(UInt(1.W))
 
 	val pipelinedTightlyCoupledNegator = Module(new PipelinedTightlyCoupledNegator(1, 64) )
-
-    val output_ready = Wire(Bool)
 	pipelinedTightlyCoupledNegator.io.input_data.valid := valid_input_to_negator
     pipelinedTightlyCoupledNegator.io.input_data.bits := input_to_negator
     output_from_negator := pipelinedTightlyCoupledNegator.io.output_data.bits
     valid_output_from_negator := pipelinedTightlyCoupledNegator.io.output_data.valid
-    output_ready := pipelinedDecoupledNegator.io.input_data.output_ready
-    pipelinedDecoupledNegator.io.output_data.ready := true.B
 
     io.output_data.bits := neg_to_enc_buffer
     io.output_data.valid := output_valid_buffer
