@@ -13,10 +13,10 @@ import freechips.rocketchip.config.Parameters
 
 class DatapathInterface extends Bundle{
     val in = new Bundle{
-        Valid(UInt(64.W)
+        val input_data = Valid(UInt(64.W)
     }
     val out = new Bundle{
-        Valid(UInt(64.W)
+        val output_data = Valid(UInt(64.W)
     }
 }
 
