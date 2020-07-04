@@ -1,1 +1,6 @@
+./Verilog/obj_dir
 ./Verilog/obj_dir/**
+.idea
+.vscode
+.idea/**
+.vscode/**
