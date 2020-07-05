@@ -13,19 +13,20 @@ import chisel3.util._
 import freechips.rocketchip.config.Parameters
 
 
-class SingleCycleTightlyCoupledNegatorInterface(implicit val p: Parameters) extends Interface{
+class SingleCycleTightlyCoupledNegatorInterface(val WIDTH_IN_NUM_OF_FULL_INTEGER:Int,val INTEGER_WIDTH:Int ) extends Interface{
     val in = new Bundle{{
-      val data = Vec(p(WIDTH_IN_NUM_OF_FULL_INTEGER), UInt(p(INTEGER_WIDT).W))
+      val data = Vec(WIDTH_IN_NUM_OF_FULL_INTEGER, UInt(INTEGER_WIDTH.W))
     }
     val out = {
-      val data = Vec(p(WIDTH_IN_NUM_OF_FULL_INTEGER), UInt(p(INTEGER_WIDT).W))
+      val data = Vec(WIDTH_IN_NUM_OF_FULL_INTEGER, UInt(INTEGER_WIDTH.W))
     }
 }
-class SingleCycleTightlyCoupledNegator(implicit val p: Parameters) extends Stage with SingleCycleTightlyCoupledNegatorInterface {
+class SingleCycleTightlyCoupledNegator(val WIDTH_IN_NUM_OF_FULL_INTEGER:Int,val INTEGER_WIDTH:Int )
+  extends Stage with SingleCycleTightlyCoupledNegatorInterface(WIDTH_IN_NUM_OF_FULL_INTEGER, INTEGER_WIDTH) {
   
   val input_buffer = State(new State()) 
   in >>> input_buffer
 
-  for(i <- 0 until p(WIDTH_IN_NUM_OF_FULL_INTEGER)) 
+  for(i <- 0 until WIDTH_IN_NUM_OF_FULL_INTEGER)
     out.data(i) := (~input_buffer.data(i)) + 1;
 }

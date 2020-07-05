@@ -14,7 +14,7 @@ import chisel3._
 import chisel3.util._ 
 import freechips.rocketchip.config.Parameters
 
-class SimulatedAESEncryptEnginInterface(implicit val p: Parameters) extends ValidInterface{
+class SimulatedAESEncryptEnginInterface extends ValidInterface{
     val in = new Bundle{
         val data = UInt(128.W)
     }
@@ -24,6 +24,6 @@ class SimulatedAESEncryptEnginInterface(implicit val p: Parameters) extends Vali
 }
 
 
-class SimulatedAESEncryptEngin(implicit val p: Parameters) extends Stage with SimulatedAESEncryptEnginInterface{
-    in >>> State(latency = p(NUM_OF_CYCLES_FOR_ENC_DEC_ENGIN)) >>> out
+class SimulatedAESEncryptEngin(val NUM_OF_CYCLES_FOR_ENC_DEC_ENGIN: Int) extends Stage with SimulatedAESEncryptEnginInterface{
+    in >>> State(latency = NUM_OF_CYCLES_FOR_ENC_DEC_ENGIN) >>> out
 }
