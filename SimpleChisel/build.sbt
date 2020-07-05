@@ -26,7 +26,7 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
   }
 }
 
-name := "chisel-negator"
+name := "negator"
 
 version := "3.3.0"
 

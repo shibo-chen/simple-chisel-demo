@@ -10,12 +10,6 @@ package negator
 
 import chisel3._
 import chisel3.util._ 
-import freechips.rocketchip.config.Parameters
-
-class DatapathInterface extends Bundle{
-    val input_data = Flipped(Valid(UInt(64.W)))
-    val output_data = Valid(UInt(64.W)
-}
 
 class Datapath_STUP extends Module{
     val io = IO(new DatapathInterface)
@@ -41,7 +35,7 @@ class Datapath_STUP extends Module{
 
 
 	// Connect the component to the datapath
-    val singleCycleTightlyCoupledNegator = Module( new SingleCycleTightlyCoupledNegator(1, 32))
+    val singleCycleTightlyCoupledNegator = Module( new SingleCycleTightlyCoupledNegator(32))
     
     singleCycleTightlyCoupledNegator.io.input_data := input_to_negator
     output_from_negator := singleCycleTightlyCoupledNegator.io.output_data
@@ -68,23 +62,23 @@ class Datapath_STUP extends Module{
             n_output_buffer := 0.U
         }
     }
-    .whenelse(counter === 0.U) {
-        n_input_valid_buffer := 1
+    .elsewhen(counter === 0.U) {
+        n_input_valid_buffer := 1.U
         n_input_buffer := input_buffer
         n_output_valid_buffer := 0.U
-        n_counter := 1
-        input_to_negator := input_buffer(31:0)
-        n_output_buffer(63:32) := 0.U
-        n_output_buffer(31:0) := output_from_negator
+        n_counter := 1.U
+        input_to_negator := input_buffer(31,0)
+        n_output_buffer(63, 32) := 0.U
+        n_output_buffer(31, 0) := output_from_negator
     }
     .otherwise {
         n_input_valid_buffer := 0.U
         n_input_buffer := 0.U
         n_output_valid_buffer := 1.U
         n_counter := 0.U
-        input_to_negator := input_buffer(63:32)
-        n_output_buffer(63:32) := output_from_negator
-        n_output_buffer(31:0) := output_buffer(31:0)		
+        input_to_negator := input_buffer(63, 32)
+        n_output_buffer(63, 32) := output_from_negator
+        n_output_buffer(31, 0) := output_buffer(31, 0)		
     }
 
 

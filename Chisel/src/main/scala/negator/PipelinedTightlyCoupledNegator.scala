@@ -15,21 +15,20 @@ package negator
 
 import chisel3._
 import chisel3.util._ 
-import freechips.rocketchip.config.Parameters
 
-class PipelinedTightlyCoupledNegatorInterface(val WIDTH_IN_NUM_OF_FULL_INTEGER = 1, val INTEGER_WIDTH = 64)(implicit val p: Parameters) extends Bundle{
-    val input_data = Flipped(Valid( Vec(WIDTH_IN_NUM_OF_FULL_INTEGER, UInt(INTEGER_WIDTH.W)) ))
-    val output_data = Valid( Vec(WIDTH_IN_NUM_OF_FULL_INTEGER, UInt(INTEGER_WIDTH.W)) )
+class PipelinedTightlyCoupledNegatorInterface(val INTEGER_WIDTH:Int = 64) extends Bundle{
+    val input_data = Flipped(Valid( UInt(INTEGER_WIDTH.W) ))
+    val output_data = Valid( UInt(INTEGER_WIDTH.W) )
 }
 
-class PipelinedTightlyCoupledNegator(implicit val p: Parameters) extends Module {
+class PipelinedTightlyCoupledNegator(val INTEGER_WIDTH:Int = 64) extends Module {
 
-  val io = IO(new PipelinedTightlyCoupledNegatorInterface)
+  val io = IO(new PipelinedTightlyCoupledNegatorInterface(INTEGER_WIDTH))
 
   val input_buffer  = RegNext(io.input_data.bits)
 
-  val n_negated_data = Wire(WIDTH_IN_NUM_OF_FULL_INTEGER, UInt(INTEGER_WIDTH.W));
-  val negated_data = RegNext(n_negated_data);
+  val n_negated_data = Wire(UInt(INTEGER_WIDTH.W))
+  val negated_data = RegNext(n_negated_data)
 
   val n_valid = Vec(2,Bool())
   val valid = RegNext(n_valid)
@@ -37,8 +36,6 @@ class PipelinedTightlyCoupledNegator(implicit val p: Parameters) extends Module 
   io.output_data.valid := valid(1)
 
   n_valid := Cat(valid(0), io.input_data.valid)
-  for(i <- 0 until WIDTH_IN_NUM_OF_FULL_INTEGER) {
-    n_negated_data(i) := ~input_buffer(i) 
-    io.output_data.bits(i) := negated_data(i) + 1.U
-  }
+  n_negated_data := ~input_buffer 
+  io.output_data.bits:= negated_data + 1.U
 }

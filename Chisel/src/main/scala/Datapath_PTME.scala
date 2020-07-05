@@ -10,18 +10,16 @@ package negator
 
 import chisel3._
 import chisel3.util._ 
-import freechips.rocketchip.config.Parameters
 
-class DatapathInterface extends Bundle{
-    val input_data = Flipped(Valid(UInt(64.W)))
-    val output_data = Valid(UInt(64.W)
-}
 
 class Datapath_PTME extends Module{
     val io = IO(new DatapathInterface)
 
     val n_next_to_encrypt = Wire(UInt(1.W))
+    val n_next_to_decrypt = Wire(UInt(1.W))
+	val next_to_encrypt = RegNext(n_next_to_encrypt)
 	val next_to_decrypt = RegNext(n_next_to_decrypt)
+
 	val ready_from_encrypt = Wire(UInt(1.W)) 
     val ready_from_decrypt = Wire(UInt(1.W)) 
     
@@ -44,12 +42,12 @@ class Datapath_PTME extends Module{
     val simulatedAESDecryptEngin  = Module(new SimulatedAESDecryptEngin)
     val simulatedAESEncryptEngin  = Module(new SimulatedAESEncryptEngin)	
 
-    simulatedAESDecryptEngin.io.input_data.valid := next_input_to_decrypt
-    simulatedAESDecryptEngin.io.input_data.bits := input_to_decryp
+    simulatedAESDecryptEngin.io.input_data.valid := next_to_decrypt
+    simulatedAESDecryptEngin.io.input_data.bits := input_to_decrypt
     ready_from_decrypt := simulatedAESDecryptEngin.io.output_data.valid
     output_from_encrypt := simulatedAESEncryptEngin.io.output_data.bits
 
-    simulatedAESEncryptEngin.io.input_data.valid := next_input_to_encrypt
+    simulatedAESEncryptEngin.io.input_data.valid := next_to_encrypt
     simulatedAESEncryptEngin.io.input_data.bits :=  input_to_encrypt
 	ready_from_encrypt := simulatedAESEncryptEngin.io.output_data.valid
     output_from_decrypt := simulatedAESDecryptEngin.io.output_data.bits
@@ -58,13 +56,13 @@ class Datapath_PTME extends Module{
 	input_to_decrypt := input_buffer
 
     when(io.input_data.valid) {
-        when(input_counter) {
-            n_input_buffer := Cat(io.input_data.bits, input_buffer(63:0))
+        when(input_counter=== 1.U) {
+            n_input_buffer := Cat(io.input_data.bits, input_buffer(63, 0))
             n_next_to_decrypt := 1.U
             n_input_counter := 0.U
         }
         .otherwise {
-            n_input_buffer := {0.U(64.W), io.input_data.bits}
+            n_input_buffer := Cat(0.U(64.W), io.input_data.bits)
             n_next_to_decrypt := 0.U
             n_input_counter := 1.U
         }
@@ -76,15 +74,15 @@ class Datapath_PTME extends Module{
     }
 
 	// interface between out and enc
-	io.output_data.bits := Mux(output_counter(1), output_buffer(127:64), output_buffer(63:0))
+	io.output_data.bits := Mux(output_counter(1)=== 1.U, output_buffer(127, 64), output_buffer(63, 0))
 	io.output_data.valid := output_counter(0) | output_counter(1)
-    when(ready_from_encrypt) {
+    when(ready_from_encrypt=== 1.U) {
         n_output_buffer := output_from_encrypt
         n_output_counter := 1.U
     }
     .otherwise {
         n_output_buffer := output_buffer
-        when(output_counter(0)) {
+        when(output_counter(0)=== 1.U) {
             n_output_counter := 2.U
         }
         .otherwise {
@@ -118,7 +116,7 @@ class Datapath_PTME extends Module{
 	val valid_input_to_negator = Wire(UInt(1.W))
     val valid_output_from_negator = Wire(UInt(1.W))
 
-	val pipelinedTightlyCoupledNegator = Module(new PipelinedTightlyCoupledNegator(1, 64) )
+	val pipelinedTightlyCoupledNegator = Module(new PipelinedTightlyCoupledNegator(64) )
 	pipelinedTightlyCoupledNegator.io.input_data.valid := valid_input_to_negator
     pipelinedTightlyCoupledNegator.io.input_data.bits := input_to_negator
     output_from_negator := pipelinedTightlyCoupledNegator.io.output_data.bits
@@ -129,58 +127,58 @@ class Datapath_PTME extends Module{
 
     when(!input_valid_buffer) {
         when(io.input_data.valid) {
-            n_input_valid_buffer = 1.U
-            n_dec_to_neg_buffer = io.input_data.bits
-            n_neg_input_counter = 0.U
-            input_to_negator = 0.U
-            valid_input_to_negator = 0.U
+            n_input_valid_buffer := 1.U
+            n_dec_to_neg_buffer := io.input_data.bits
+            n_neg_input_counter := 0.U
+            input_to_negator := 0.U
+            valid_input_to_negator := 0.U
         }
         .otherwise {
-            n_input_valid_buffer = 0.U
-            n_dec_to_neg_buffer = io.input_data.bits
-            n_neg_input_counter = 0.U
-            input_to_negator = 0.U
-            valid_input_to_negator = 0.U
+            n_input_valid_buffer := 0.U
+            n_dec_to_neg_buffer := io.input_data.bits
+            n_neg_input_counter := 0.U
+            input_to_negator := 0.U
+            valid_input_to_negator := 0.U
         }
     }
     .elsewhen(neg_input_counter === 0.U) {
-        n_input_valid_buffer = 1.U
-        n_dec_to_neg_buffer = dec_to_neg_buffer
-        n_neg_input_counter = 1.U
-        input_to_negator = dec_to_neg_buffer(63:0)
-        valid_input_to_negator = 1.U
+        n_input_valid_buffer := 1.U
+        n_dec_to_neg_buffer := dec_to_neg_buffer
+        n_neg_input_counter := 1.U
+        input_to_negator := dec_to_neg_buffer(63,0)
+        valid_input_to_negator := 1.U
     }
-    .whenelse {
-        n_input_valid_buffer = 0.U
-        n_dec_to_neg_buffer = 0.U
-        n_neg_input_counter = 0.U
-        input_to_negator = dec_to_neg_buffer(127:64)
-        valid_input_to_negator = 1.U
+    .otherwise {
+        n_input_valid_buffer := 0.U
+        n_dec_to_neg_buffer := 0.U
+        n_neg_input_counter := 0.U
+        input_to_negator := dec_to_neg_buffer(127, 64)
+        valid_input_to_negator := 1.U
     }
 
     when(!output_valid_buffer) {
-        when(valid_output_from_negator) {
-            when(neg_output_counter) {
-                n_output_valid_buffer = 1
-                n_neg_to_enc_buffer = Cat(output_from_negator,neg_to_enc_buffer(63:0))
-                n_neg_output_counter = 0.U
+        when(valid_output_from_negator=== 1.U) {
+            when(neg_output_counter=== 1.U) {
+                n_output_valid_buffer := 1.U
+                n_neg_to_enc_buffer := Cat(output_from_negator,neg_to_enc_buffer(63, 0))
+                n_neg_output_counter := 0.U
             }
             .otherwise {
-                n_output_valid_buffer = 0.U
-                n_neg_to_enc_buffer = Cat(0.U(64.W), output_from_negator)
-                n_neg_output_counter = 1.U
+                n_output_valid_buffer := 0.U
+                n_neg_to_enc_buffer := Cat(0.U(64.W), output_from_negator)
+                n_neg_output_counter := 1.U
             }
         }
         .otherwise {
-            n_output_valid_buffer = output_valid_buffer
-            n_neg_to_enc_buffer = neg_to_enc_buffer
-            n_neg_output_counter = neg_output_counter
+            n_output_valid_buffer := output_valid_buffer
+            n_neg_to_enc_buffer := neg_to_enc_buffer
+            n_neg_output_counter := neg_output_counter
         }
     }
     .otherwise {
-        n_output_valid_buffer = 0.U
-        n_neg_to_enc_buffer = 0.U
-        n_neg_output_counter = 0.U			
+        n_output_valid_buffer := 0.U
+        n_neg_to_enc_buffer := 0.U
+        n_neg_output_counter := 0.U			
     }
 
 }

@@ -10,13 +10,6 @@ package negator
 
 import chisel3._
 import chisel3.util._ 
-import freechips.rocketchip.config.Parameters
-
-class DatapathInterface extends Bundle{
-    val input_data = Flipped(Valid(UInt(64.W)))
-    val output_data = Valid(UInt(64.W)
-}
-
 
 class Datapath_STMP extends Module{
     val io = IO(new DatapathInterface)
@@ -24,8 +17,8 @@ class Datapath_STMP extends Module{
     val buffer_valid = RegNext(io.input_data.valid)
     val data_buffer = RegNext(io.input_data.bits)
 
-    val singleCycleTightlyCoupledNegator = Module( new SingleCycleTightlyCoupledNegator(1, 64))
-    io.io.output_data.valid := buffer_valid
+    val singleCycleTightlyCoupledNegator = Module( new SingleCycleTightlyCoupledNegator(64))
+    io.output_data.valid := buffer_valid
     io.output_data.bits := singleCycleTightlyCoupledNegator.io.output_data
-    singleCycleTightlyCoupledNegator.io.output_data.bits := data_buffer
+    singleCycleTightlyCoupledNegator.io.input_data := data_buffer
 }
